@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ghost Commits</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; text-align: center; padding: 40px; }
+        .container { background: #161b22; padding: 30px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #30363d; }
+        input { padding: 12px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: white; width: 250px; }
+        button { padding: 12px 20px; border-radius: 6px; border: none; background: #238636; color: white; cursor: pointer; font-weight: bold; }
+        .badge { background: #7c4ad6; padding: 8px 15px; border-radius: 20px; margin: 10px; display: inline-block; font-size: 14px; }
+        #chart-wrapper { width: 100%; margin-top: 30px; }
+        #status { color: #8b949e; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>👻 Ghost Commits</h1>
+        <input type="text" id="username" placeholder="GitHub Username">
+        <button onclick="analyze()">Analyze</button>
+        <div id="status"></div>
+
+        <div id="dashboard" style="display:none;">
+            <h2 id="display-name"></h2>
+            <div id="archetypes"></div>
+            <div id="chart-wrapper">
+                <canvas id="skillChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        async function analyze() {
+            const user = document.getElementById('username').value;
+            const status = document.getElementById('status');
+            const dashboard = document.getElementById('dashboard');
+
+            if (!user) return alert("Enter a username!");
+
+            status.innerText = "⏳ Reading your code DNA...";
+            dashboard.style.display = "none";
+
+            try {
+                //const res = await fetch(`http://localhost:3000/api/analyze/${user}`);
+                // NEW: Replace with your Render URL
+const res = await fetch(`https://ghost-commits-backend.onrender.com/api/analyze/${user}`);
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                status.innerText = "";
+                dashboard.style.display = "block";
+                document.getElementById('display-name').innerText = data.username;
+
+                // Set Archetypes
+                let badges = '';
+                if (data.archetypes.nightOwl) badges += '<span class="badge">🦉 Night Owl</span>';
+                if (data.archetypes.theCleaner) badges += '<span class="badge">🧹 Code Cleaner</span>';
+                document.getElementById('archetypes').innerHTML = badges;
+
+                // Create Radar Chart
+                if (myChart) myChart.destroy();
+                const ctx = document.getElementById('skillChart').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(data.stats.languages),
+                        datasets: [{
+                            label: 'Experience Points',
+                            data: Object.values(data.stats.languages),
+                            backgroundColor: 'rgba(124, 74, 214, 0.2)',
+                            borderColor: '#7c4ad6',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { 
+                        scales: { r: { grid: { color: '#30363d' }, ticks: { display: false }, angleLines: { color: '#30363d' } } } 
+                    }
+                });
+
+            } catch (err) {
+                status.innerText = "❌ " + err.message + "  Server not shared the data";
+            }
+        }
+    </script>
+</body>
+</html>
