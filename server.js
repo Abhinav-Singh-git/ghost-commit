@@ -1,9 +1,11 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+app.use(cors({
+  origin: 'https://abhinav-singh-git.github.io/ghost-commit/'
+}));
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 const myToken = process.env.GITHUB_TOKEN;
